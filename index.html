@@ -130,6 +130,10 @@
             background: linear-gradient(45deg, #ff6b6b, #ff0000);
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
         }
+        .btn-delete {
+            background: linear-gradient(45deg, #ff4757, #ff0000);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+        }
         .market-tabs {
             display: flex;
             margin-bottom: 20px;
@@ -168,7 +172,32 @@
             z-index: 10000;
             width: 90%;
             max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
             backdrop-filter: blur(10px);
+        }
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #6a40bf;
+            gap: 5px;
+        }
+        .admin-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background: rgba(106, 64, 191, 0.3);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .admin-tab.active {
+            background: #6a40bf;
+            box-shadow: 0 0 10px rgba(106, 64, 191, 0.6);
+        }
+        .admin-tab-content {
+            display: none;
+        }
+        .admin-tab-content.active {
+            display: block;
         }
         .admin-input {
             padding: 12px;
@@ -242,9 +271,8 @@
 
         <div class="market-tabs">
             <div class="tab active" id="market-tab-btn" onclick="switchTab('market')">Рынок</div>
-            <div class="tab" onclick="switchTab('sell')">Продать</div>
-            <div class="tab" onclick="switchTab('codes')">Коды</div>
             <div class="tab" onclick="switchTab('my-pets')">Мои петы</div>
+            <div class="tab" onclick="switchTab('codes')">Коды</div>
         </div>
 
         <div id="market-tab" class="tab-content active">
@@ -254,10 +282,10 @@
             </div>
         </div>
 
-        <div id="sell-tab" class="tab-content">
-            <h2>Продать петов</h2>
-            <div class="pets-grid" id="sell-pets">
-                <div class="empty-state">У вас нет петов для продажи</div>
+        <div id="my-pets" class="tab-content">
+            <h2>Мои петы</h2>
+            <div class="pets-grid" id="user-pets">
+                <div class="empty-state">У вас пока нет петов</div>
             </div>
         </div>
 
@@ -267,43 +295,55 @@
             <button class="btn btn-buy" onclick="activateUserCode()">Активировать код</button>
             <div id="code-activation-status" class="status-message"></div>
         </div>
-
-        <div id="my-pets" class="tab-content">
-            <h2>Мои петы</h2>
-            <div class="pets-grid" id="user-pets">
-                <div class="empty-state">У вас пока нет петов</div>
-            </div>
-        </div>
     </div>
 
     <div class="admin-panel" id="admin-panel">
         <h2>Админ панель</h2>
-        <input type="password" id="admin-password" class="admin-input" placeholder="Пароль">
-        <button class="admin-btn" onclick="checkAdminPassword()">Войти</button>
         
-        <div id="admin-content" style="display:none">
-            <h3>Создать пета</h3>
+        <div class="admin-tabs">
+            <div class="admin-tab active" onclick="switchAdminTab('main')">Основное</div>
+            <div class="admin-tab" onclick="switchAdminTab('create-pet')">Создать пета</div>
+            <div class="admin-tab" onclick="switchAdminTab('withdrawals')">Выводы</div>
+            <div class="admin-tab" onclick="switchAdminTab('manage-pets')">Управление</div>
+        </div>
+
+        <div id="admin-main" class="admin-tab-content active">
+            <input type="password" id="admin-password" class="admin-input" placeholder="Пароль">
+            <button class="admin-btn" onclick="checkAdminPassword()">Войти</button>
+        </div>
+
+        <div id="admin-create-pet" class="admin-tab-content">
             <input type="text" id="pet-name" class="admin-input" placeholder="Имя пета">
             <input type="number" id="pet-price" class="admin-input" placeholder="Цена">
             <input type="text" id="pet-icon" class="admin-input" placeholder="Эмодзи (🐱)">
             <button class="admin-btn" onclick="createPet()">Создать пета</button>
             <div id="pet-creation-status" class="status-message"></div>
+        </div>
 
-            <h3>Создать код</h3>
-            <input type="number" id="coins-amount" class="admin-input" placeholder="Количество монет">
-            <button class="admin-btn" onclick="generateCode()">Создать код</button>
-            <div id="generated-code" class="status-message"></div>
-            <div id="code-generation-status" class="status-message"></div>
-
+        <div id="admin-withdrawals" class="admin-tab-content">
             <h3>Запросы на вывод</h3>
             <div id="withdrawals-list">
                 <div class="empty-state">Нет запросов</div>
             </div>
         </div>
+
+        <div id="admin-manage-pets" class="admin-tab-content">
+            <h3>Управление петам</h3>
+            <div id="all-pets-list">
+                <div class="empty-state">Загрузка петов...</div>
+            </div>
+        </div>
+
+        <div id="admin-content" style="display:none">
+            <h3>Создать код</h3>
+            <input type="number" id="coins-amount" class="admin-input" placeholder="Количество монет">
+            <button class="admin-btn" onclick="generateCode()">Создать код</button>
+            <div id="generated-code" class="status-message"></div>
+            <div id="code-generation-status" class="status-message"></div>
+        </div>
     </div>
 
     <script>
-        // ВАШИ КЛЮЧИ
         const JSONBIN_API_KEY = '$2a$10$7SFvJJcyxHLcjDA7bXPc/uEBf2P/uB7/tp2WZiyjDwpFtIuCmviHS';
         const JSONBIN_BIN_ID = '68b08a9aae596e708fda3c11';
         
@@ -311,7 +351,23 @@
         let adminClickCount = 0;
         let lastAdminClick = 0;
 
-        // Инициализация данных при загрузке
+        function encryptPetName(name) {
+            const symbols = ['@', '#', '$', '%', '&', '*', '!', '?'];
+            let encrypted = '';
+            
+            for (let i = 0; i < name.length; i++) {
+                if (i % 2 === 0 && i < 3) {
+                    encrypted += Math.floor(Math.random() * 10);
+                } else if (i % 3 === 0 && symbols.length > 0) {
+                    encrypted += symbols[Math.floor(Math.random() * symbols.length)];
+                } else {
+                    encrypted += name[i];
+                }
+            }
+            
+            return encrypted.slice(0, 6);
+        }
+
         async function initializeData() {
             try {
                 const data = await getData();
@@ -340,7 +396,6 @@
                 cachedData = data || { codes: {}, pets: [] };
                 return cachedData;
             } catch (error) {
-                console.error('Ошибка:', error);
                 return { codes: {}, pets: [] };
             }
         }
@@ -355,8 +410,6 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
-                if (!response.ok) throw new Error('Ошибка сохранения');
                 
                 cachedData = data;
                 return await response.json();
@@ -434,12 +487,10 @@
                 const data = await getData();
                 const userPets = JSON.parse(localStorage.getItem('user_pets') || '[]');
                 const container = document.getElementById('user-pets');
-                const sellContainer = document.getElementById('sell-pets');
                 
                 const pets = data.pets.filter(pet => userPets.includes(pet.id));
                 
                 container.innerHTML = pets.length ? '' : '<div class="empty-state">У вас нет петов</div>';
-                sellContainer.innerHTML = pets.length ? '' : '<div class="empty-state">У вас нет петов</div>';
                 
                 pets.forEach(pet => {
                     const card = document.createElement('div');
@@ -452,15 +503,6 @@
                         <button class="btn btn-withdraw" onclick="withdrawPet('${pet.id}')">Вывести</button>
                     `;
                     container.appendChild(card);
-                    
-                    const sellCard = document.createElement('div');
-                    sellCard.className = 'pet-card';
-                    sellCard.innerHTML = `
-                        <div class="pet-icon">${pet.icon}</div>
-                        <div class="pet-name">${pet.name}</div>
-                        <button class="btn btn-sell" onclick="sellPet('${pet.id}')">Продать за ${Math.floor(pet.price/2)} монет</button>
-                    `;
-                    sellContainer.appendChild(sellCard);
                 });
             } catch (error) {
                 document.getElementById('user-pets').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
@@ -498,12 +540,18 @@
             try {
                 const data = await getData();
                 const pet = data.pets.find(p => p.id === petId);
+                const userId = localStorage.getItem('user_id');
                 const withdrawals = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+                
+                const encryptedName = encryptPetName(pet.name);
+                const withdrawalCode = `WD-${userId}-${encryptedName}`;
                 
                 withdrawals.push({
                     petId: petId,
-                    userId: localStorage.getItem('user_id'),
+                    userId: userId,
                     petName: pet.name,
+                    encryptedName: encryptedName,
+                    code: withdrawalCode,
                     status: 'pending',
                     date: new Date().toLocaleString()
                 });
@@ -514,7 +562,7 @@
                 userPets = userPets.filter(id => id !== petId);
                 localStorage.setItem('user_pets', JSON.stringify(userPets));
                 
-                alert('Запрос на вывод отправлен администратору!');
+                alert(`Запрос на вывод отправлен! Код: ${withdrawalCode}`);
                 loadUserPets();
             } catch (error) {
                 alert('Ошибка при выводе: ' + error.message);
@@ -571,6 +619,7 @@
             if (password === 'Влад27Сентября') {
                 document.getElementById('admin-content').style.display = 'block';
                 loadWithdrawals();
+                loadAllPets();
             } else {
                 alert('Неверный пароль!');
             }
@@ -664,13 +713,57 @@
                 const item = document.createElement('div');
                 item.className = 'withdrawal-item';
                 item.innerHTML = `
-                    <strong>${withdrawal.petName}</strong><br>
-                    ID пользователя: ${withdrawal.userId}<br>
+                    <strong>${withdrawal.petName}</strong> (${withdrawal.encryptedName})<br>
+                    ID: ${withdrawal.userId}<br>
+                    Код: ${withdrawal.code}<br>
                     Дата: ${withdrawal.date}<br>
                     <button class="check-btn" onclick="approveWithdrawal('${withdrawal.petId}', '${withdrawal.userId}')">Подтвердить вывод</button>
                 `;
                 container.appendChild(item);
             });
+        }
+
+        async function loadAllPets() {
+            try {
+                const data = await getData();
+                const container = document.getElementById('all-pets-list');
+                
+                container.innerHTML = data.pets.length ? '' : '<div class="empty-state">Нет петов</div>';
+                
+                data.pets.forEach(pet => {
+                    const item = document.createElement('div');
+                    item.className = 'withdrawal-item';
+                    item.innerHTML = `
+                        <strong>${pet.name}</strong> (${pet.icon})<br>
+                        Цена: ${pet.price} монет<br>
+                        Владелец: ${pet.owner || 'Нет'}<br>
+                        <button class="check-btn" onclick="deletePet('${pet.id}')">Удалить</button>
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                document.getElementById('all-pets-list').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+            }
+        }
+
+        async function deletePet(petId) {
+            if (!confirm('Удалить этого пета навсегда?')) return;
+            
+            try {
+                const data = await getData();
+                data.pets = data.pets.filter(p => p.id !== petId);
+                await saveData(data);
+                
+                let userPets = JSON.parse(localStorage.getItem('user_pets') || '[]');
+                userPets = userPets.filter(id => id !== petId);
+                localStorage.setItem('user_pets', JSON.stringify(userPets));
+                
+                loadAllPets();
+                loadMarketPets();
+                alert('Пет удален!');
+            } catch (error) {
+                alert('Ошибка удаления: ' + error.message);
+            }
         }
 
         async function approveWithdrawal(petId, userId) {
@@ -695,7 +788,7 @@
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            const tabs = ['market', 'sell', 'codes', 'my-pets'];
+            const tabs = ['market', 'my-pets', 'codes'];
             const tabIndex = tabs.indexOf(tabName);
             
             if (tabIndex !== -1) {
@@ -704,7 +797,18 @@
             }
             
             if (tabName === 'market') loadMarketPets();
-            if (tabName === 'my-pets' || tabName === 'sell') loadUserPets();
+            if (tabName === 'my-pets') loadUserPets();
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`admin-${tabName}`).classList.add('active');
+            document.querySelector(`.admin-tab:nth-child(${['main','create-pet','withdrawals','manage-pets'].indexOf(tabName)+1})`).classList.add('active');
+            
+            if (tabName === 'withdrawals') loadWithdrawals();
+            if (tabName === 'manage-pets') loadAllPets();
         }
 
         function setupAdmin() {
@@ -724,7 +828,6 @@
             });
         }
 
-        // Инициализация при загрузке
         window.onload = async function() {
             await initializeData();
             initUser();
